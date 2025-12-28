@@ -1,5 +1,6 @@
 //! Fluent builder for WhatsApp client
 
+use std::future::Future;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -39,10 +40,11 @@ impl WhatsAppBuilder {
         Ok(self.inner.as_ref().unwrap())
     }
 
-    /// Register a QR code handler
-    pub fn on_qr<F>(mut self, f: F) -> Self
+    /// Register an async QR code handler
+    pub fn on_qr<F, Fut>(mut self, f: F) -> Self
     where
-        F: Fn(QrEvent) + Send + Sync + 'static,
+        F: Fn(QrEvent) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = ()> + Send + 'static,
     {
         if let Ok(inner) = self.ensure_inner() {
             inner.handlers.register_qr(f);
@@ -50,10 +52,11 @@ impl WhatsAppBuilder {
         self
     }
 
-    /// Register a message handler
-    pub fn on_message<F>(mut self, f: F) -> Self
+    /// Register an async message handler
+    pub fn on_message<F, Fut>(mut self, f: F) -> Self
     where
-        F: Fn(MessageEvent) + Send + Sync + 'static,
+        F: Fn(MessageEvent) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = ()> + Send + 'static,
     {
         if let Ok(inner) = self.ensure_inner() {
             inner.handlers.register_message(f);
@@ -61,10 +64,11 @@ impl WhatsAppBuilder {
         self
     }
 
-    /// Register a connected handler
-    pub fn on_connected<F>(mut self, f: F) -> Self
+    /// Register an async connected handler
+    pub fn on_connected<F, Fut>(mut self, f: F) -> Self
     where
-        F: Fn(()) + Send + Sync + 'static,
+        F: Fn(()) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = ()> + Send + 'static,
     {
         if let Ok(inner) = self.ensure_inner() {
             inner.handlers.register_connected(f);
@@ -72,10 +76,11 @@ impl WhatsAppBuilder {
         self
     }
 
-    /// Register a disconnected handler
-    pub fn on_disconnected<F>(mut self, f: F) -> Self
+    /// Register an async disconnected handler
+    pub fn on_disconnected<F, Fut>(mut self, f: F) -> Self
     where
-        F: Fn(()) + Send + Sync + 'static,
+        F: Fn(()) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = ()> + Send + 'static,
     {
         if let Ok(inner) = self.ensure_inner() {
             inner.handlers.register_disconnected(f);

@@ -1,6 +1,6 @@
 //! Multi-client example - managing multiple WhatsApp accounts
 
-use whatsmeow::{init_tracing, WhatsAppManager};
+use whatsmeow::{WhatsAppManager, init_tracing};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -13,20 +13,20 @@ async fn main() -> anyhow::Result<()> {
     // Spawn first bot
     let bot1 = manager
         .spawn("bot-1", "bot1.db")?
-        .on_qr(|qr| {
+        .on_qr(|qr| async move {
             println!("[Bot1] 📱 QR: {:?}", qr.code());
         })
-        .on_message(|msg| {
+        .on_message(|msg| async move {
             println!("[Bot1] 📩 {}: {}", msg.sender_name(), msg.text());
         });
 
     // Spawn second bot
     let bot2 = manager
         .spawn("bot-2", "bot2.db")?
-        .on_qr(|qr| {
+        .on_qr(|qr| async move {
             println!("[Bot2] 📱 QR: {:?}", qr.code());
         })
-        .on_message(|msg| {
+        .on_message(|msg| async move {
             println!("[Bot2] 📩 {}: {}", msg.sender_name(), msg.text());
         });
 

@@ -1,4 +1,4 @@
-//! Basic WhatsApp client example with callbacks
+//! Basic WhatsApp client example with async callbacks
 
 use colored::*;
 use qrcode::QrCode;
@@ -13,21 +13,21 @@ async fn main() -> anyhow::Result<()> {
     println!("   Press Ctrl+C to exit gracefully\n");
 
     let client = WhatsApp::connect("storage/session.db")
-        .on_qr(|qr| {
+        .on_qr(|qr| async move {
             if let Some(code) = qr.code() {
                 display_qr_code(code);
             }
         })
-        .on_connected(|_| {
+        .on_connected(|_| async {
             println!("✅ Connected to WhatsApp!");
         })
-        .on_message(|msg| {
+        .on_message(|msg| async move {
             let text = msg.text();
             if !text.is_empty() {
                 println!("📩 {}: {}", msg.sender_name(), text);
             }
         })
-        .on_disconnected(|_| {
+        .on_disconnected(|_| async {
             println!("❌ Disconnected");
         })
         .build()
