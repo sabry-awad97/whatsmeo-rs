@@ -92,6 +92,13 @@ tasks:
     cmds:
       - go mod tidy
 
+  go:update:
+    desc: Update all Go dependencies to latest
+    dir: "{{.GO_DIR}}"
+    cmds:
+      - go get -u ./...
+      - go mod tidy
+
   check:
     desc: Check workspace compiles
     cmds:
@@ -108,3 +115,39 @@ tasks:
     desc: Run linters
     cmds:
       - cargo clippy --workspace -- -D warnings
+
+  # Docker tasks
+  docker:build:
+    desc: Build Docker image
+    cmds:
+      - docker build --load -t whatsmeow-rs .
+
+  docker:run:
+    desc: Run Docker container interactively
+    cmds:
+      - docker run -it --rm -v ./data:/app/data whatsmeow-rs
+
+  docker:up:
+    desc: Start with docker-compose
+    cmds:
+      - docker-compose up -d
+
+  docker:down:
+    desc: Stop docker-compose
+    cmds:
+      - docker-compose down
+
+  docker:logs:
+    desc: View Docker logs
+    cmds:
+      - docker-compose logs -f
+
+  publish:
+    desc: Publish crates to crates.io
+    cmds:
+      - cargo publish -p whatsmeow-sys --allow-dirty
+      - cmd: sleep 10
+        platforms: [linux, darwin]
+      - cmd: Start-Sleep -Seconds 10
+        platforms: [windows]
+      - cargo publish -p whatsmeow --allow-dirty

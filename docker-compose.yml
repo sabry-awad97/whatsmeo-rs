@@ -1,0 +1,13 @@
+services:
+  whatsmeow:
+    build: .
+    container_name: whatsmeow-bot
+    restart: unless-stopped
+    volumes:
+      # Persist session data
+      - ./data:/app/data
+    environment:
+      - RUST_LOG=whatsmeow=info
+    # For interactive QR scanning (optional)
+    stdin_open: true
+    tty: true

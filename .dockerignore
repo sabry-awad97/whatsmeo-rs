@@ -1,0 +1,35 @@
+# Ignore build artifacts
+target/
+*.exe
+*.dll
+*.lib
+*.a
+*.so
+
+# Ignore Go build cache
+go/target/
+**/.go/
+
+# Ignore IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Ignore temporary files
+*.tmp
+*.log
+debug_events/
+
+# Ignore session data (should be mounted as volume)
+*.db
+storage/
+data/
+
+# Ignore local config
+.env
+.env.local
+
+# Git
+.git/
+.gitignore
