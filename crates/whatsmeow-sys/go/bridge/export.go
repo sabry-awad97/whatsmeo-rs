@@ -29,10 +29,13 @@ var (
 )
 
 //export wm_client_new
-func wm_client_new(dbPath *C.char) C.uintptr_t {
-	path := C.GoString(dbPath)
+func wm_client_new(dbPath *C.char, deviceName *C.char) C.uintptr_t {
+	config := ClientConfig{
+		DbPath:     C.GoString(dbPath),
+		DeviceName: C.GoString(deviceName),
+	}
 
-	client, err := NewClient(path)
+	client, err := NewClient(config)
 	if err != nil {
 		return 0
 	}

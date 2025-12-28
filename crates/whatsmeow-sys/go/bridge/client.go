@@ -7,6 +7,8 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"go.mau.fi/whatsmeow"
+	waCompanionReg "go.mau.fi/whatsmeow/proto/waCompanionReg"
+	"go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	waLog "go.mau.fi/whatsmeow/util/log"
 )
@@ -23,20 +25,34 @@ type Client struct {
 	lastError  string
 }
 
-// NewClient creates a new WhatsApp client
-func NewClient(dbPath string) (*Client, error) {
+// ClientConfig holds configuration for creating a new client
+type ClientConfig struct {
+	DbPath     string
+	DeviceName string
+}
+
+// NewClient creates a new WhatsApp client with the given configuration
+func NewClient(config ClientConfig) (*Client, error) {
 	ctx := context.Background()
 
+	// Set custom device properties
+	deviceName := config.DeviceName
+	if deviceName == "" {
+		deviceName = "WhatsApp-RS"
+	}
+	store.DeviceProps.Os = &deviceName
+	store.DeviceProps.PlatformType = waCompanionReg.DeviceProps_DESKTOP.Enum()
+
 	// Initialize database (new API requires context)
-	store, err := sqlstore.New(ctx, "sqlite3",
-		fmt.Sprintf("file:%s?_foreign_keys=on", dbPath),
+	container, err := sqlstore.New(ctx, "sqlite3",
+		fmt.Sprintf("file:%s?_foreign_keys=on", config.DbPath),
 		waLog.Noop)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open store: %w", err)
 	}
 
 	// Get or create device (new API requires context)
-	device, err := store.GetFirstDevice(ctx)
+	device, err := container.GetFirstDevice(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get device: %w", err)
 	}
@@ -46,7 +62,7 @@ func NewClient(dbPath string) (*Client, error) {
 
 	c := &Client{
 		client:     client,
-		store:      store,
+		store:      container,
 		eventQueue: make(chan []byte, 1024),
 		ctx:        clientCtx,
 		cancel:     cancel,

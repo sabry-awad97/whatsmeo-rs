@@ -26,8 +26,8 @@ pub mod error_codes {
 }
 
 unsafe extern "C" {
-    /// Initialize a new WhatsApp client
-    pub fn wm_client_new(db_path: *const c_char) -> ClientHandle;
+    /// Initialize a new WhatsApp client with custom device name
+    pub fn wm_client_new(db_path: *const c_char, device_name: *const c_char) -> ClientHandle;
 
     /// Connect the client to WhatsApp
     pub fn wm_client_connect(handle: ClientHandle) -> WmResult;

@@ -12,6 +12,7 @@ use crate::inner::InnerClient;
 /// Builder for configuring a WhatsApp client
 pub struct WhatsAppBuilder {
     db_path: String,
+    device_name: String,
     inner: Option<Arc<InnerClient>>,
 }
 
@@ -19,13 +20,20 @@ impl WhatsAppBuilder {
     pub(crate) fn new(db_path: impl AsRef<Path>) -> Self {
         Self {
             db_path: db_path.as_ref().to_string_lossy().into_owned(),
+            device_name: "WhatsApp-RS".to_string(),
             inner: None,
         }
     }
 
+    /// Set a custom device name (shown in WhatsApp's "Linked Devices" list)
+    pub fn device_name(mut self, name: impl Into<String>) -> Self {
+        self.device_name = name.into();
+        self
+    }
+
     fn ensure_inner(&mut self) -> Result<&Arc<InnerClient>> {
         if self.inner.is_none() {
-            let ffi = FfiClient::new(&self.db_path)?;
+            let ffi = FfiClient::new(&self.db_path, &self.device_name)?;
             self.inner = Some(Arc::new(InnerClient::new(ffi)));
         }
         Ok(self.inner.as_ref().unwrap())

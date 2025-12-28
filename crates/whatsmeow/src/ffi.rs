@@ -20,8 +20,8 @@ pub(crate) struct FfiClient {
 }
 
 impl FfiClient {
-    #[tracing::instrument(skip_all, name = "ffi.new", fields(path = %db_path.as_ref().display()))]
-    pub fn new(db_path: impl AsRef<Path>) -> Result<Self> {
+    #[tracing::instrument(skip_all, name = "ffi.new", fields(path = %db_path.as_ref().display(), device = %device_name))]
+    pub fn new(db_path: impl AsRef<Path>, device_name: &str) -> Result<Self> {
         let path = db_path.as_ref();
 
         // Create parent directory if it doesn't exist
@@ -40,9 +40,11 @@ impl FfiClient {
 
         let c_path =
             CString::new(path_str).map_err(|_| Error::Init("Path contains null byte".into()))?;
+        let c_device = CString::new(device_name)
+            .map_err(|_| Error::Init("Device name contains null byte".into()))?;
 
         let handle = GLOBAL.trace_operation("wm_client_new", || unsafe {
-            sys::wm_client_new(c_path.as_ptr())
+            sys::wm_client_new(c_path.as_ptr(), c_device.as_ptr())
         });
 
         if handle.is_null() {
