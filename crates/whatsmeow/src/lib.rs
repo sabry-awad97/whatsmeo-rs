@@ -27,6 +27,7 @@ mod events;
 mod ffi;
 mod handlers;
 mod inner;
+mod manager;
 mod stream;
 
 pub use builder::WhatsAppBuilder;
@@ -35,6 +36,7 @@ pub use error::{Error, Result};
 pub use events::{
     Event, LoggedOutEvent, MessageEvent, PairSuccessEvent, PresenceEvent, QrEvent, ReceiptEvent,
 };
+pub use manager::{ClientId, WhatsAppManager};
 pub use stream::EventStream;
 
 /// Initialize default tracing subscriber
