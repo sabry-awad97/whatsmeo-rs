@@ -16,7 +16,7 @@ default = []
 embed-dll = [] # Embed the Go DLL in the binary for portable executables
 
 [dependencies]
-whatsmeow-sys = { path = "../whatsmeow-sys", version = "0.1.2" }
+whatsmeow-sys = { path = "../whatsmeow-sys", version = "0.1.3" }
 
 tokio.workspace = true
 thiserror.workspace = true

@@ -1,87 +1,72 @@
-# whatsmeow-rs 🦀💬
+# whatsmeow
 
-Idiomatic, thread-safe Rust bindings for WhatsApp via [WhatsMeow](https://github.com/tulir/whatsmeow) Go bridge.
+Idiomatic, thread-safe Rust bindings for WhatsApp via [WhatsMeow](https://github.com/tulir/whatsmeow).
+
+[![Crates.io](https://img.shields.io/crates/v/whatsmeow.svg)](https://crates.io/crates/whatsmeow)
+[![Documentation](https://docs.rs/whatsmeow/badge.svg)](https://docs.rs/whatsmeow)
 
 ## Features
 
-- ✨ **Fluent builder API** - No `Arc`, no channels in user code
-- 📡 **Callback & Stream events** - Choose your style
-- 🔒 **Thread-safe** - Share clients across tasks
-- 📊 **Tracing integration** - Structured logging
-- 🧠 **Multi-client support** - Manage multiple accounts
-- 🏗️ **Automated build** - One command `task build` for Go & Rust
+- ✨ **Fluent builder API** with chainable methods
+- 📡 **Dual event model**: Callbacks or async streams
+- 🏷️ **Custom device name** in WhatsApp's "Linked Devices"
+- 📊 **Memory tracking** for FFI debugging
+- 🔒 **Thread-safe** client sharing
+- 📦 **Zero manual setup** - Go bridge compiles automatically
 
 ## Quick Start
 
 ```rust
-use whatsmeow::WhatsApp;
+use whatsmeow::{WhatsApp, init_tracing};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // simplified: DLL path is now handled automatically
-    WhatsApp::connect("session.db")
+    init_tracing();
+
+    let client = WhatsApp::connect("data/session.db")
+        .device_name("My App")  // Shows in WhatsApp
         .on_qr(|qr| {
             if let Some(code) = qr.code() {
-                println!("Scan QR: {}", code);
+                println!("Scan: {}", code);
             }
         })
         .on_message(|msg| {
-            println!("{}: {}", msg.sender_name(), msg.text);
+            println!("{}: {}", msg.sender_name(), msg.text());
         })
-        .run()
-        .await
+        .build()
+        .await?;
+
+    // Graceful Ctrl+C handling
+    tokio::select! {
+        r = client.run() => r?,
+        _ = tokio::signal::ctrl_c() => client.disconnect(),
+    }
+    Ok(())
 }
 ```
 
-## Stream-based Events
+## Memory Tracking
 
 ```rust
-use futures::StreamExt;
-use whatsmeow::{Event, WhatsApp};
+use whatsmeow::TrackedAllocator;
 
-let client = WhatsApp::connect("session.db").build().await?;
+#[global_allocator]
+static ALLOC: TrackedAllocator = TrackedAllocator::new();
 
-let mut events = client.events();
-while let Some(event) = events.next().await {
-    match event {
-        Event::Message(msg) => println!("{}", msg.text),
-        Event::Disconnected => break,
-        _ => {}
-    }
-}
+// On shutdown:
+ALLOC.print_stats();
 ```
 
-## Requirements
+## Event Types
 
-- **Rust** 1.70+
-- **Go** 1.24+ (CGO required)
-- **Task** (go-task) for automation
-
-## Building
-
-The project uses `task` for unified build management.
-
-```powershell
-# 1. Build everything (Go DLL + .lib + Rust)
-task build
-
-# 2. Run the basic example
-task run
-```
-
-## Project Structure
-
-```
-whatsmeow-rs/
-├── crates/
-│   ├── whatsmeow-sys/ # Raw FFI bindings
-│   └── whatsmeow/     # Safe Rust API (Main Crate)
-├── go/
-│   ├── bridge/        # Go WhatsMeow wrapper
-│   └── scripts/       # MSVC build scripts
-├── examples/           # Multi and Stream examples
-└── Taskfile.yml        # Build automation
-```
+| Event          | Description            |
+| -------------- | ---------------------- |
+| `Qr`           | QR code for scanning   |
+| `Connected`    | Successfully connected |
+| `Disconnected` | Connection lost        |
+| `Message`      | Incoming message       |
+| `Receipt`      | Delivery/read receipt  |
+| `Presence`     | Online/offline status  |
 
 ## License
 
