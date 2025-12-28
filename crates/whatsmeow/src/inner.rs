@@ -1,7 +1,7 @@
 //! Internal client state
 
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use parking_lot::Mutex;
@@ -13,6 +13,9 @@ use crate::events::RawEvent;
 use crate::ffi::FfiClient;
 use crate::handlers::Handlers;
 use crate::stream::EventStream;
+
+/// Set to true to save one sample of each raw event type to debug_events/
+const DEBUG_SAVE_EVENTS: bool = false;
 
 pub(crate) struct InnerClient {
     pub ffi: Arc<Mutex<FfiClient>>,
@@ -54,6 +57,10 @@ impl InnerClient {
         let handlers = self.handlers.clone();
         let mut shutdown = self.shutdown_rx.clone();
 
+        // Track which event types we've already saved (for debugging)
+        let mut saved_event_types = std::collections::HashSet::new();
+        let debug_dir = std::path::Path::new("debug_events");
+
         loop {
             if *shutdown.borrow() {
                 tracing::info!("Shutting down");
@@ -63,12 +70,27 @@ impl InnerClient {
             let data = { ffi.lock().poll_event()? };
 
             if let Some(bytes) = data {
-                if let Ok(raw) = serde_json::from_slice::<RawEvent>(&bytes) {
-                    if let Ok(event) = raw.into_event() {
-                        tracing::debug!(?event, "Event received");
-                        handlers.dispatch(&event);
-                        bus.emit(event);
+                // Save raw event for debugging (once per event type)
+                if DEBUG_SAVE_EVENTS
+                    && let Ok(raw) = serde_json::from_slice::<serde_json::Value>(&bytes)
+                    && let Some(event_type) = raw.get("type").and_then(|t| t.as_str())
+                    && !saved_event_types.contains(event_type)
+                {
+                    saved_event_types.insert(event_type.to_string());
+                    let _ = std::fs::create_dir_all(debug_dir);
+                    let filename = debug_dir.join(format!("{}.json", event_type));
+                    if let Ok(pretty) = serde_json::to_string_pretty(&raw) {
+                        let _ = std::fs::write(&filename, pretty);
+                        tracing::info!("Saved raw event sample: {}", filename.display());
                     }
+                }
+
+                if let Ok(raw) = serde_json::from_slice::<RawEvent>(&bytes)
+                    && let Ok(event) = raw.into_event()
+                {
+                    tracing::debug!(?event, "Event received");
+                    handlers.dispatch(&event);
+                    bus.emit(event);
                 }
             } else {
                 tokio::select! {

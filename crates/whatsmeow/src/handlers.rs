@@ -78,7 +78,10 @@ impl Handlers {
                 }
             }
             // Ignored events
-            Event::HistorySync | Event::Unknown(_) => {}
+            Event::HistorySync
+            | Event::OfflineSyncPreview(_)
+            | Event::OfflineSyncCompleted(_)
+            | Event::Unknown { .. } => {}
         }
     }
 }

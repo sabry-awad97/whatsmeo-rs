@@ -1,9 +1,9 @@
 //! Basic WhatsApp client example with callbacks
 
 use colored::*;
-use qrcode::render::unicode;
 use qrcode::QrCode;
-use whatsmeow::{init_tracing, WhatsApp};
+use qrcode::render::unicode;
+use whatsmeow::{WhatsApp, init_tracing};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -22,7 +22,10 @@ async fn main() -> anyhow::Result<()> {
             println!("✅ Connected to WhatsApp!");
         })
         .on_message(|msg| {
-            println!("📩 {}: {}", msg.sender_name(), msg.text);
+            let text = msg.text();
+            if !text.is_empty() {
+                println!("📩 {}: {}", msg.sender_name(), text);
+            }
         })
         .on_disconnected(|_| {
             println!("❌ Disconnected");

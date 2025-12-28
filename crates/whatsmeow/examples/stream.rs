@@ -1,7 +1,7 @@
 //! Stream-based event handling example
 
 use futures::StreamExt;
-use whatsmeow::{init_tracing, Event, WhatsApp};
+use whatsmeow::{Event, WhatsApp, init_tracing};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -30,13 +30,16 @@ async fn main() -> anyhow::Result<()> {
                 println!("✅ Connected to WhatsApp!");
             }
             Event::Message(msg) => {
-                println!("📩 {}: {}", msg.sender_name(), msg.text);
+                let text = msg.text();
+                if !text.is_empty() {
+                    println!("📩 {}: {}", msg.sender_name(), text);
 
-                // Echo messages that start with "!echo "
-                if msg.text.starts_with("!echo ") {
-                    let reply = msg.text.strip_prefix("!echo ").unwrap();
-                    if let Err(e) = client.send(&msg.from, reply) {
-                        eprintln!("Failed to send reply: {}", e);
+                    // Echo messages that start with "!echo "
+                    if text.starts_with("!echo ") {
+                        let reply = text.strip_prefix("!echo ").unwrap();
+                        if let Err(e) = client.send(&msg.info.chat, reply) {
+                            eprintln!("Failed to send reply: {}", e);
+                        }
                     }
                 }
             }

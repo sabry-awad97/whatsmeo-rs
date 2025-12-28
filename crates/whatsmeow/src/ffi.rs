@@ -3,7 +3,7 @@
 use std::ffi::CString;
 use std::path::Path;
 
-use whatsmeow_sys::{self as sys, error_codes::*, ClientHandle};
+use whatsmeow_sys::{self as sys, ClientHandle, error_codes::*};
 
 use crate::error::{Error, Result};
 
@@ -18,11 +18,12 @@ impl FfiClient {
         let path = db_path.as_ref();
 
         // Create parent directory if it doesn't exist
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() && !parent.exists() {
-                std::fs::create_dir_all(parent)
-                    .map_err(|e| Error::Init(format!("Failed to create directory: {}", e)))?;
-            }
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+            && !parent.exists()
+        {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| Error::Init(format!("Failed to create directory: {}", e)))?;
         }
 
         let path_str = path

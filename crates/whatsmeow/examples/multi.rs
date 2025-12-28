@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
             println!("[Bot1] 📱 QR: {:?}", qr.code());
         })
         .on_message(|msg| {
-            println!("[Bot1] 📩 {}: {}", msg.sender_name(), msg.text);
+            println!("[Bot1] 📩 {}: {}", msg.sender_name(), msg.text());
         });
 
     // Spawn second bot
@@ -27,7 +27,7 @@ async fn main() -> anyhow::Result<()> {
             println!("[Bot2] 📱 QR: {:?}", qr.code());
         })
         .on_message(|msg| {
-            println!("[Bot2] 📩 {}: {}", msg.sender_name(), msg.text);
+            println!("[Bot2] 📩 {}: {}", msg.sender_name(), msg.text());
         });
 
     // Run both in parallel

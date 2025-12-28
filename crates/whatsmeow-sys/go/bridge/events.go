@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"reflect"
 	"time"
 
 	"go.mau.fi/whatsmeow/types/events"
@@ -15,90 +17,44 @@ type Event struct {
 }
 
 // MarshalEvent converts any WhatsMeow event to our unified JSON format
+// It marshals ALL fields from the original event struct
 func MarshalEvent(evt interface{}) ([]byte, error) {
 	var eventType string
-	var data interface{}
 
-	switch v := evt.(type) {
+	switch evt.(type) {
 	case *events.QR:
 		eventType = "qr"
-		data = map[string]interface{}{
-			"codes": v.Codes,
-		}
-
 	case *events.PairSuccess:
 		eventType = "pair_success"
-		data = map[string]interface{}{
-			"id":            v.ID.String(),
-			"business_name": v.BusinessName,
-			"platform":      v.Platform,
-		}
-
 	case *events.Connected:
 		eventType = "connected"
-		data = nil
-
 	case *events.Disconnected:
 		eventType = "disconnected"
-		data = nil
-
 	case *events.LoggedOut:
 		eventType = "logged_out"
-		data = map[string]interface{}{
-			"on_connect": v.OnConnect,
-			"reason":     int(v.Reason),
-		}
-
 	case *events.Message:
 		eventType = "message"
-
-		text := ""
-		if v.Message.GetConversation() != "" {
-			text = v.Message.GetConversation()
-		} else if v.Message.GetExtendedTextMessage() != nil {
-			text = v.Message.GetExtendedTextMessage().GetText()
-		}
-
-		data = map[string]interface{}{
-			"id":        v.Info.ID,
-			"from":      v.Info.Sender.String(),
-			"chat":      v.Info.Chat.String(),
-			"text":      text,
-			"timestamp": v.Info.Timestamp.UnixMilli(),
-			"is_group":  v.Info.IsGroup,
-			"push_name": v.Info.PushName,
-		}
-
 	case *events.Receipt:
 		eventType = "receipt"
-		data = map[string]interface{}{
-			"message_ids": v.MessageIDs,
-			"chat":        v.Chat.String(),
-			"sender":      v.Sender.String(),
-			"type":        string(v.Type),
-			"timestamp":   v.Timestamp.UnixMilli(),
-		}
-
 	case *events.Presence:
 		eventType = "presence"
-		data = map[string]interface{}{
-			"from":        v.From.String(),
-			"unavailable": v.Unavailable,
-			"last_seen":   v.LastSeen.UnixMilli(),
-		}
-
 	case *events.HistorySync:
 		eventType = "history_sync"
-		data = map[string]interface{}{}
-
 	case *events.PushNameSetting:
 		eventType = "push_name"
-		data = map[string]interface{}{}
-
+	case *events.ChatPresence:
+		eventType = "chat_presence"
+	case *events.OfflineSyncPreview:
+		eventType = "offline_sync_preview"
+	case *events.OfflineSyncCompleted:
+		eventType = "offline_sync_completed"
 	default:
-		// Unknown event - serialize type name
-		eventType = "unknown"
-		data = nil
+		// Use reflection to get type name for unknown events
+		t := reflect.TypeOf(evt)
+		if t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
+		eventType = fmt.Sprintf("unknown_%s", t.Name())
 	}
 
 	event := Event{
@@ -107,13 +63,12 @@ func MarshalEvent(evt interface{}) ([]byte, error) {
 		Data:      nil,
 	}
 
-	if data != nil {
-		rawData, err := json.Marshal(data)
-		if err != nil {
-			return nil, err
-		}
-		event.Data = rawData
+	// Marshal the complete original event struct
+	rawData, err := json.Marshal(evt)
+	if err != nil {
+		return nil, err
 	}
+	event.Data = rawData
 
 	return json.Marshal(event)
 }
