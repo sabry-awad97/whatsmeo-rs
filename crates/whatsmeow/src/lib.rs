@@ -38,8 +38,8 @@ pub use client::WhatsApp;
 pub use embedded::ensure_dll_extracted;
 pub use error::{Error, Result};
 pub use events::{
-    Event, LoggedOutEvent, MessageEvent, MessageInfo, PairSuccessEvent, PresenceEvent, QrEvent,
-    ReceiptEvent,
+    Event, Jid, LoggedOutEvent, MessageEvent, MessageInfo, MessageType, PairSuccessEvent,
+    PresenceEvent, QrEvent, ReceiptEvent,
 };
 pub use manager::{ClientId, WhatsAppManager};
 pub use stream::EventStream;

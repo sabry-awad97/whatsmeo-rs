@@ -2,6 +2,103 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::fmt;
+
+/// WhatsApp JID (Jabber ID) - identifies users, groups, and broadcasts
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Jid(String);
+
+impl Jid {
+    /// Create a JID from a raw string (e.g., "1234567890@s.whatsapp.net")
+    pub fn new(jid: impl Into<String>) -> Self {
+        Self(jid.into())
+    }
+
+    /// Create a user JID from a phone number (adds @s.whatsapp.net)
+    pub fn user(phone: impl AsRef<str>) -> Self {
+        let phone = phone.as_ref().trim_start_matches('+');
+        Self(format!("{}@s.whatsapp.net", phone))
+    }
+
+    /// Create a group JID (adds @g.us)
+    pub fn group(group_id: impl AsRef<str>) -> Self {
+        Self(format!("{}@g.us", group_id.as_ref()))
+    }
+
+    /// Get the raw JID string
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    /// Check if this is a group JID
+    pub fn is_group(&self) -> bool {
+        self.0.ends_with("@g.us")
+    }
+
+    /// Check if this is a user JID
+    pub fn is_user(&self) -> bool {
+        self.0.ends_with("@s.whatsapp.net")
+    }
+}
+
+impl fmt::Display for Jid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<String> for Jid {
+    fn from(s: String) -> Self {
+        Self::new(s)
+    }
+}
+
+impl From<&str> for Jid {
+    fn from(s: &str) -> Self {
+        Self::new(s)
+    }
+}
+
+impl From<&String> for Jid {
+    fn from(s: &String) -> Self {
+        Self::new(s.clone())
+    }
+}
+
+impl AsRef<str> for Jid {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+/// Represents different types of outgoing WhatsApp messages
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum MessageType {
+    /// Plain text message
+    Text(String),
+    // Future: Image, Video, Document, Audio, Location, Contact, etc.
+}
+
+impl MessageType {
+    /// Get text content if this is a text message
+    pub fn as_text(&self) -> Option<&str> {
+        match self {
+            MessageType::Text(s) => Some(s),
+        }
+    }
+}
+
+impl From<String> for MessageType {
+    fn from(s: String) -> Self {
+        MessageType::Text(s)
+    }
+}
+
+impl From<&str> for MessageType {
+    fn from(s: &str) -> Self {
+        MessageType::Text(s.to_string())
+    }
+}
 
 /// All events emitted by the WhatsApp client
 #[derive(Debug, Clone)]
@@ -61,9 +158,9 @@ pub struct PairSuccessEvent {
     pub platform: String,
 }
 
-/// JID (WhatsApp ID)
+/// JID (WhatsApp ID) from Go JSON deserialization
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Jid {
+pub struct JidInfo {
     #[serde(rename = "User")]
     pub user: String,
     #[serde(rename = "Server")]
@@ -72,9 +169,22 @@ pub struct Jid {
     pub device: u16,
 }
 
-impl std::fmt::Display for Jid {
+impl JidInfo {
+    /// Convert to a Jid for sending
+    pub fn to_jid(&self) -> Jid {
+        Jid::new(format!("{}@{}", self.user, self.server))
+    }
+}
+
+impl std::fmt::Display for JidInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}@{}", self.user, self.server)
+    }
+}
+
+impl From<JidInfo> for Jid {
+    fn from(info: JidInfo) -> Self {
+        info.to_jid()
     }
 }
 

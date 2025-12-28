@@ -8,9 +8,12 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"go.mau.fi/whatsmeow"
 	waCompanionReg "go.mau.fi/whatsmeow/proto/waCompanionReg"
+	waProto "go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
+	"go.mau.fi/whatsmeow/types"
 	waLog "go.mau.fi/whatsmeow/util/log"
+	"google.golang.org/protobuf/proto"
 )
 
 // Client wraps WhatsMeow with an event queue for FFI
@@ -139,9 +142,39 @@ func (c *Client) PollEvent() []byte {
 	}
 }
 
-// SendMessage sends a text message
-func (c *Client) SendMessage(jid, text string) error {
-	// TODO: Implement full message sending
+// SendMessage sends a text message to the specified JID
+func (c *Client) SendMessage(jidStr, text string) error {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if !c.connected {
+		return fmt.Errorf("not connected")
+	}
+
+	// Parse JID
+	jid, err := types.ParseJID(jidStr)
+	if err != nil {
+		return fmt.Errorf("invalid JID: %w", err)
+	}
+
+	// Create text message
+	msg := &waProto.Message{
+		ExtendedTextMessage: &waProto.ExtendedTextMessage{
+			Text: proto.String(text),
+		},
+	}
+
+	// Send the message
+	_, err = c.client.SendMessage(c.ctx, jid, msg)
+	if err != nil {
+		c.mu.RUnlock()
+		c.mu.Lock()
+		c.lastError = err.Error()
+		c.mu.Unlock()
+		c.mu.RLock()
+		return fmt.Errorf("send failed: %w", err)
+	}
+
 	return nil
 }
 

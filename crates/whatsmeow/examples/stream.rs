@@ -49,7 +49,7 @@ async fn main() -> anyhow::Result<()> {
                             println!("📩 {}: {}", msg.sender_name(), text);
 
                             // Echo messages that start with "!echo "
-                            if text.starts_with("!echo ") {
+                            if msg.info.is_from_me && text.starts_with("!echo ") {
                                 let reply = text.strip_prefix("!echo ").unwrap();
                                 if let Err(e) = client.send(&msg.info.chat, reply) {
                                     eprintln!("Failed to send reply: {}", e);
