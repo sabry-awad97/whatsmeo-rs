@@ -178,6 +178,54 @@ func (c *Client) SendMessage(jidStr, text string) error {
 	return nil
 }
 
+// SendImage sends an image message to the specified JID
+func (c *Client) SendImage(jidStr string, imageData []byte, mimeType, caption string) error {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if !c.connected {
+		return fmt.Errorf("not connected")
+	}
+
+	// Parse JID
+	jid, err := types.ParseJID(jidStr)
+	if err != nil {
+		return fmt.Errorf("invalid JID: %w", err)
+	}
+
+	// Upload the image to WhatsApp servers
+	uploaded, err := c.client.Upload(c.ctx, imageData, whatsmeow.MediaImage)
+	if err != nil {
+		return fmt.Errorf("upload failed: %w", err)
+	}
+
+	// Create image message
+	msg := &waProto.Message{
+		ImageMessage: &waProto.ImageMessage{
+			URL:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			Mimetype:      proto.String(mimeType),
+			FileEncSHA256: uploaded.FileEncSHA256,
+			FileSHA256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uint64(len(imageData))),
+		},
+	}
+
+	// Add caption if provided
+	if caption != "" {
+		msg.ImageMessage.Caption = proto.String(caption)
+	}
+
+	// Send the message
+	_, err = c.client.SendMessage(c.ctx, jid, msg)
+	if err != nil {
+		return fmt.Errorf("send failed: %w", err)
+	}
+
+	return nil
+}
+
 // Disconnect closes the connection
 func (c *Client) Disconnect() {
 	c.mu.Lock()

@@ -123,6 +123,29 @@ func wm_send_message(handle C.uintptr_t, jid *C.char, text *C.char) C.int {
 	return WM_OK
 }
 
+//export wm_send_image
+func wm_send_image(handle C.uintptr_t, jid *C.char, data *C.char, dataLen C.int, mimeType *C.char, caption *C.char) C.int {
+	client := getClient(uintptr(handle))
+	if client == nil {
+		return WM_ERR_INVALID_HANDLE
+	}
+
+	// Convert C data to Go slice
+	imageData := C.GoBytes(unsafe.Pointer(data), dataLen)
+
+	var captionStr string
+	if caption != nil {
+		captionStr = C.GoString(caption)
+	}
+
+	err := client.SendImage(C.GoString(jid), imageData, C.GoString(mimeType), captionStr)
+	if err != nil {
+		return WM_ERR_CONNECT
+	}
+
+	return WM_OK
+}
+
 //export wm_last_error
 func wm_last_error(handle C.uintptr_t, buf *C.char, bufLen C.int) C.int {
 	client := getClient(uintptr(handle))

@@ -48,6 +48,16 @@ unsafe extern "C" {
         text: *const c_char,
     ) -> WmResult;
 
+    /// Send an image message
+    pub fn wm_send_image(
+        handle: ClientHandle,
+        jid: *const c_char,
+        data: *const c_char,
+        data_len: c_int,
+        mime_type: *const c_char,
+        caption: *const c_char,
+    ) -> WmResult;
+
     /// Get last error message
     pub fn wm_last_error(handle: ClientHandle, buf: *mut c_char, buf_len: c_int) -> c_int;
 }

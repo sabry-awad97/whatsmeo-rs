@@ -49,6 +49,10 @@ impl WhatsApp {
     ///
     /// // Send to a group
     /// client.send(Jid::group("123456789"), MessageType::Text("Hello group!".into()))?;
+    ///
+    /// // Send an image
+    /// let image_data = std::fs::read("photo.jpg")?;
+    /// client.send(Jid::user("1234567890"), MessageType::image(image_data, "image/jpeg"))?;
     /// ```
     pub fn send(&self, to: impl Into<Jid>, message: impl Into<MessageType>) -> Result<()> {
         let jid: Jid = to.into();
@@ -56,6 +60,13 @@ impl WhatsApp {
 
         match msg {
             MessageType::Text(text) => self.inner.send_message(jid.as_str(), &text),
+            MessageType::Image {
+                data,
+                mime_type,
+                caption,
+            } => self
+                .inner
+                .send_image(jid.as_str(), &data, &mime_type, caption.as_deref()),
         }
     }
 

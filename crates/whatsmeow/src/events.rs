@@ -76,14 +76,51 @@ impl AsRef<str> for Jid {
 pub enum MessageType {
     /// Plain text message
     Text(String),
-    // Future: Image, Video, Document, Audio, Location, Contact, etc.
+    /// Image message
+    Image {
+        /// Raw image data (JPEG, PNG, etc.)
+        data: Vec<u8>,
+        /// MIME type (e.g., "image/jpeg", "image/png")
+        mime_type: String,
+        /// Optional caption
+        caption: Option<String>,
+    },
+    // Future: Video, Document, Audio, Location, Contact, etc.
 }
 
 impl MessageType {
+    /// Create a text message
+    pub fn text(s: impl Into<String>) -> Self {
+        MessageType::Text(s.into())
+    }
+
+    /// Create an image message from raw bytes
+    pub fn image(data: Vec<u8>, mime_type: impl Into<String>) -> Self {
+        MessageType::Image {
+            data,
+            mime_type: mime_type.into(),
+            caption: None,
+        }
+    }
+
+    /// Create an image message with a caption
+    pub fn image_with_caption(
+        data: Vec<u8>,
+        mime_type: impl Into<String>,
+        caption: impl Into<String>,
+    ) -> Self {
+        MessageType::Image {
+            data,
+            mime_type: mime_type.into(),
+            caption: Some(caption.into()),
+        }
+    }
+
     /// Get text content if this is a text message
     pub fn as_text(&self) -> Option<&str> {
         match self {
             MessageType::Text(s) => Some(s),
+            _ => None,
         }
     }
 }

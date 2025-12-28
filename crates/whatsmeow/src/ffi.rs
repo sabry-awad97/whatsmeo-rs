@@ -108,6 +108,40 @@ impl FfiClient {
         self.check_result(result)
     }
 
+    #[tracing::instrument(skip(self, data), name = "ffi.send_image", fields(to = %jid, data_len = data.len(), mime = %mime_type))]
+    pub fn send_image(
+        &self,
+        jid: &str,
+        data: &[u8],
+        mime_type: &str,
+        caption: Option<&str>,
+    ) -> Result<()> {
+        let c_jid = CString::new(jid).map_err(|_| Error::Send("JID contains null byte".into()))?;
+        let c_mime = CString::new(mime_type)
+            .map_err(|_| Error::Send("MIME type contains null byte".into()))?;
+        let c_caption = caption
+            .map(|c| CString::new(c).map_err(|_| Error::Send("Caption contains null byte".into())))
+            .transpose()?;
+
+        let caption_ptr = c_caption
+            .as_ref()
+            .map(|c| c.as_ptr())
+            .unwrap_or(std::ptr::null());
+
+        let result = GLOBAL.trace_operation("wm_send_image", || unsafe {
+            sys::wm_send_image(
+                self.handle,
+                c_jid.as_ptr(),
+                data.as_ptr() as *const i8,
+                data.len() as i32,
+                c_mime.as_ptr(),
+                caption_ptr,
+            )
+        });
+
+        self.check_result(result)
+    }
+
     fn check_result(&self, code: i32) -> Result<()> {
         match code {
             WM_OK => Ok(()),

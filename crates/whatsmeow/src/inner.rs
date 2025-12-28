@@ -111,6 +111,16 @@ impl InnerClient {
         self.ffi.lock().send_message(jid, text)
     }
 
+    pub fn send_image(
+        &self,
+        jid: &str,
+        data: &[u8],
+        mime_type: &str,
+        caption: Option<&str>,
+    ) -> Result<()> {
+        self.ffi.lock().send_image(jid, data, mime_type, caption)
+    }
+
     pub fn disconnect(&self) {
         let _ = self.shutdown_tx.send(true);
         if let Some(client) = self.ffi.try_lock() {
