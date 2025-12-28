@@ -3,28 +3,57 @@
 use serde::{Deserialize, Serialize};
 
 /// All events emitted by the WhatsApp client
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "lowercase")]
+#[derive(Debug, Clone)]
 pub enum Event {
     /// QR code for authentication
     Qr(QrEvent),
+    /// Pairing successful
+    PairSuccess(PairSuccessEvent),
     /// Successfully connected
     Connected,
     /// Disconnected from WhatsApp
     Disconnected,
+    /// Logged out
+    LoggedOut(LoggedOutEvent),
     /// Incoming message
     Message(MessageEvent),
     /// Message delivery receipt
     Receipt(ReceiptEvent),
     /// Presence update
     Presence(PresenceEvent),
+    /// History sync progress
+    HistorySync,
+    /// Unknown event type
+    Unknown(String),
 }
 
 /// QR code event data
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QrEvent {
-    pub code: String,
-    pub timeout_seconds: u32,
+    /// QR codes (multiple codes for retries)
+    pub codes: Vec<String>,
+}
+
+impl QrEvent {
+    /// Get the current/first QR code
+    pub fn code(&self) -> Option<&str> {
+        self.codes.first().map(|s| s.as_str())
+    }
+}
+
+/// Pair success event
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PairSuccessEvent {
+    pub id: String,
+    pub business_name: String,
+    pub platform: String,
+}
+
+/// Logged out event
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoggedOutEvent {
+    pub on_connect: bool,
+    pub reason: i32,
 }
 
 /// Incoming message event
@@ -32,10 +61,12 @@ pub struct QrEvent {
 pub struct MessageEvent {
     pub id: String,
     pub from: String,
-    pub to: String,
+    pub chat: String,
     pub text: String,
     pub timestamp: i64,
     pub is_group: bool,
+    #[serde(default)]
+    pub push_name: String,
 }
 
 impl MessageEvent {
@@ -44,32 +75,37 @@ impl MessageEvent {
     }
 
     pub fn sender_name(&self) -> &str {
-        self.from.split('@').next().unwrap_or(&self.from)
+        if !self.push_name.is_empty() {
+            &self.push_name
+        } else {
+            self.from.split('@').next().unwrap_or(&self.from)
+        }
     }
 }
 
 /// Message receipt
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReceiptEvent {
-    pub message_id: String,
-    pub status: ReceiptStatus,
+    pub message_ids: Vec<String>,
+    pub chat: String,
+    pub sender: String,
+    #[serde(rename = "type")]
+    pub receipt_type: String,
     pub timestamp: i64,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ReceiptStatus {
-    Sent,
-    Delivered,
-    Read,
 }
 
 /// Presence event
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PresenceEvent {
-    pub jid: String,
-    pub is_online: bool,
-    pub last_seen: Option<i64>,
+    pub from: String,
+    pub unavailable: bool,
+    pub last_seen: i64,
+}
+
+impl PresenceEvent {
+    pub fn is_online(&self) -> bool {
+        !self.unavailable
+    }
 }
 
 /// Raw event from FFI (internal)
@@ -77,20 +113,61 @@ pub struct PresenceEvent {
 pub(crate) struct RawEvent {
     #[serde(rename = "type")]
     pub event_type: String,
+    #[allow(dead_code)]
     pub timestamp: i64,
-    pub data: serde_json::Value,
+    #[serde(default)]
+    pub data: Option<serde_json::Value>,
 }
 
 impl RawEvent {
     pub fn into_event(self) -> Result<Event, serde_json::Error> {
         match self.event_type.as_str() {
-            "qr" => Ok(Event::Qr(serde_json::from_value(self.data)?)),
+            "qr" => {
+                if let Some(data) = self.data {
+                    Ok(Event::Qr(serde_json::from_value(data)?))
+                } else {
+                    Ok(Event::Unknown("qr_no_data".into()))
+                }
+            }
+            "pair_success" => {
+                if let Some(data) = self.data {
+                    Ok(Event::PairSuccess(serde_json::from_value(data)?))
+                } else {
+                    Ok(Event::Connected)
+                }
+            }
             "connected" => Ok(Event::Connected),
             "disconnected" => Ok(Event::Disconnected),
-            "message" => Ok(Event::Message(serde_json::from_value(self.data)?)),
-            "receipt" => Ok(Event::Receipt(serde_json::from_value(self.data)?)),
-            "presence" => Ok(Event::Presence(serde_json::from_value(self.data)?)),
-            _ => Ok(Event::Disconnected),
+            "logged_out" => {
+                if let Some(data) = self.data {
+                    Ok(Event::LoggedOut(serde_json::from_value(data)?))
+                } else {
+                    Ok(Event::Disconnected)
+                }
+            }
+            "message" => {
+                if let Some(data) = self.data {
+                    Ok(Event::Message(serde_json::from_value(data)?))
+                } else {
+                    Ok(Event::Unknown("message_no_data".into()))
+                }
+            }
+            "receipt" => {
+                if let Some(data) = self.data {
+                    Ok(Event::Receipt(serde_json::from_value(data)?))
+                } else {
+                    Ok(Event::Unknown("receipt_no_data".into()))
+                }
+            }
+            "presence" => {
+                if let Some(data) = self.data {
+                    Ok(Event::Presence(serde_json::from_value(data)?))
+                } else {
+                    Ok(Event::Unknown("presence_no_data".into()))
+                }
+            }
+            "history_sync" => Ok(Event::HistorySync),
+            other => Ok(Event::Unknown(other.to_string())),
         }
     }
 }

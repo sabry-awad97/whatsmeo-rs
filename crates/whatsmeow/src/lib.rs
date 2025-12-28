@@ -32,12 +32,14 @@ mod stream;
 pub use builder::WhatsAppBuilder;
 pub use client::WhatsApp;
 pub use error::{Error, Result};
-pub use events::{Event, MessageEvent, PresenceEvent, QrEvent, ReceiptEvent, ReceiptStatus};
+pub use events::{
+    Event, LoggedOutEvent, MessageEvent, PairSuccessEvent, PresenceEvent, QrEvent, ReceiptEvent,
+};
 pub use stream::EventStream;
 
 /// Initialize default tracing subscriber
 pub fn init_tracing() {
-    use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
+    use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
     let filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("whatsmeow=info"));

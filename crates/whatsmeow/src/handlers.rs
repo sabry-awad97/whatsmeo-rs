@@ -57,12 +57,12 @@ impl Handlers {
                     h(data.clone());
                 }
             }
-            Event::Connected => {
+            Event::Connected | Event::PairSuccess(_) => {
                 for h in self.on_connected.read().iter() {
                     h(());
                 }
             }
-            Event::Disconnected => {
+            Event::Disconnected | Event::LoggedOut(_) => {
                 for h in self.on_disconnected.read().iter() {
                     h(());
                 }
@@ -77,6 +77,8 @@ impl Handlers {
                     h(data.clone());
                 }
             }
+            // Ignored events
+            Event::HistorySync | Event::Unknown(_) => {}
         }
     }
 }
