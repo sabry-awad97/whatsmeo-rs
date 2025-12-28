@@ -1,4 +1,4 @@
-package bridge
+package main
 
 import (
 	"encoding/json"
@@ -46,7 +46,7 @@ func MarshalEvent(evt interface{}) ([]byte, error) {
 		eventType = "logged_out"
 		data = map[string]interface{}{
 			"on_connect": v.OnConnect,
-			"reason":     v.Reason.String(),
+			"reason":     int(v.Reason),
 		}
 
 	case *events.Message:
@@ -75,7 +75,7 @@ func MarshalEvent(evt interface{}) ([]byte, error) {
 			"message_ids": v.MessageIDs,
 			"chat":        v.Chat.String(),
 			"sender":      v.Sender.String(),
-			"type":        v.Type.String(),
+			"type":        string(v.Type),
 			"timestamp":   v.Timestamp.UnixMilli(),
 		}
 
@@ -89,20 +89,16 @@ func MarshalEvent(evt interface{}) ([]byte, error) {
 
 	case *events.HistorySync:
 		eventType = "history_sync"
-		data = map[string]interface{}{
-			"progress": v.Progress,
-		}
+		data = map[string]interface{}{}
 
 	case *events.PushNameSetting:
 		eventType = "push_name"
-		data = map[string]interface{}{
-			"action": v.Action.String(),
-		}
+		data = map[string]interface{}{}
 
 	default:
-		// Unknown event - serialize full struct
+		// Unknown event - serialize type name
 		eventType = "unknown"
-		data = evt
+		data = nil
 	}
 
 	event := Event{
