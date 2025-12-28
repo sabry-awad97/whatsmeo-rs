@@ -3,9 +3,9 @@
 version: "3"
 
 vars:
-  GO_DIR: go
-  GO_BRIDGE_DIR: go/bridge
-  GO_TARGET_DIR: go/target
+  GO_DIR: crates/whatsmeow-sys/go
+  GO_BRIDGE_DIR: crates/whatsmeow-sys/go/bridge
+  GO_TARGET_DIR: crates/whatsmeow-sys/go/target
   RUST_TARGET_DIR: target
 
 env:

@@ -25,7 +25,7 @@ pub mod error_codes {
     pub const WM_ERR_BUFFER_TOO_SMALL: c_int = -5;
 }
 
-extern "C" {
+unsafe extern "C" {
     /// Initialize a new WhatsApp client
     pub fn wm_client_new(db_path: *const c_char) -> ClientHandle;
 

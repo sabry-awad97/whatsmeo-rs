@@ -76,6 +76,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "external-example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "tokio",
+ "whatsmeow",
+]
+
+[[package]]
 name = "find-msvc-tools"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -574,7 +583,7 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "whatsmeow"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "dashmap",
@@ -591,7 +600,7 @@ dependencies = [
 
 [[package]]
 name = "whatsmeow-sys"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "cc",
  "libc",

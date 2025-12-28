@@ -1,0 +1,9 @@
+[package]
+name = "external-example"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+whatsmeow = { path = "../crates/whatsmeow" }
+tokio = { version = "1.40", features = ["full"] }
+anyhow = "1.0"

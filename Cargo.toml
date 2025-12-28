@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/whatsmeow-sys", "crates/whatsmeow"]
+members = ["crates/whatsmeow-sys", "crates/whatsmeow", "external-example"]
 
 [workspace.package]
 version = "0.1.0"
