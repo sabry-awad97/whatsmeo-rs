@@ -1,8 +1,8 @@
 [package]
 name = "whatsmeow"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
-authors = ["Your Name <email@example.com>"]
+authors = ["Sabry Awad <sabry-awad97@hotmail.com>"]
 description = "Idiomatic, thread-safe Rust bindings for WhatsApp via WhatsMeow Go bridge"
 keywords = ["whatsapp", "messaging", "ffi", "whatsmeow"]
 categories = ["api-bindings", "asynchronous", "multimedia"]
@@ -12,7 +12,7 @@ readme = "README.md"
 license.workspace = true
 
 [dependencies]
-whatsmeow-sys = { path = "../whatsmeow-sys", version = "0.1.1" }
+whatsmeow-sys = { path = "../whatsmeow-sys", version = "0.1.2" }
 
 tokio.workspace = true
 thiserror.workspace = true

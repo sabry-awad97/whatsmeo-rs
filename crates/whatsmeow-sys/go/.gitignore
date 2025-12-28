@@ -5,8 +5,7 @@ target/
 *.dylib
 *.h
 
-# Go module cache
-go.sum
+# Go module cache (go.sum must be tracked for crates.io!)
 
 # IDE
 .idea/

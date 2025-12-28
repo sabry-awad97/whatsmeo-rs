@@ -1,4 +1,4 @@
-module github.com/yourusername/whatsmeow-rs/go
+module whatsmeow-bridge
 
 go 1.24.0
 

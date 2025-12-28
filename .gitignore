@@ -3,11 +3,12 @@ target/
 **/*.rs.bk
 Cargo.lock
 
-# Go
-go/target/
-go/bridge/bridge.h
-go/bridge/bridge.so
-go/bridge/bridge.dll
+# Go build artifacts (NOT go.sum - it must be tracked!)
+**/go/target/
+**/go/bridge/*.h
+**/go/bridge/*.so
+**/go/bridge/*.dll
+!**/go/go.sum
 
 # IDEs
 .vscode/
