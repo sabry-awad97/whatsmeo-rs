@@ -22,6 +22,7 @@
 mod allocator;
 mod builder;
 mod client;
+mod embedded;
 mod error;
 mod event_bus;
 mod events;
@@ -34,6 +35,7 @@ mod stream;
 pub use allocator::TrackedAllocator;
 pub use builder::WhatsAppBuilder;
 pub use client::WhatsApp;
+pub use embedded::ensure_dll_extracted;
 pub use error::{Error, Result};
 pub use events::{
     Event, LoggedOutEvent, MessageEvent, MessageInfo, PairSuccessEvent, PresenceEvent, QrEvent,

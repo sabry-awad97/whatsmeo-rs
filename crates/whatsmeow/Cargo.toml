@@ -11,6 +11,10 @@ repository = "https://github.com/sabry-awad97/whatsmeow-rs"
 readme = "README.md"
 license.workspace = true
 
+[features]
+default = []
+embed-dll = [] # Embed the Go DLL in the binary for portable executables
+
 [dependencies]
 whatsmeow-sys = { path = "../whatsmeow-sys", version = "0.1.2" }
 
