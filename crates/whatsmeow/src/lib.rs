@@ -19,6 +19,7 @@
 //! }
 //! ```
 
+mod allocator;
 mod builder;
 mod client;
 mod error;
@@ -30,18 +31,20 @@ mod inner;
 mod manager;
 mod stream;
 
+pub use allocator::TrackedAllocator;
 pub use builder::WhatsAppBuilder;
 pub use client::WhatsApp;
 pub use error::{Error, Result};
 pub use events::{
-    Event, LoggedOutEvent, MessageEvent, PairSuccessEvent, PresenceEvent, QrEvent, ReceiptEvent,
+    Event, LoggedOutEvent, MessageEvent, MessageInfo, PairSuccessEvent, PresenceEvent, QrEvent,
+    ReceiptEvent,
 };
 pub use manager::{ClientId, WhatsAppManager};
 pub use stream::EventStream;
 
 /// Initialize default tracing subscriber
 pub fn init_tracing() {
-    use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+    use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
     let filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("whatsmeow=info"));
