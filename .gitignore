@@ -1,1 +1,26 @@
-/target
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Go
+go/target/
+go/bridge/bridge.h
+go/bridge/bridge.so
+go/bridge/bridge.dll
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Task
+.task/
+task.md
+walkthrough.md
+implementation_plan.md

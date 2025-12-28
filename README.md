@@ -1,6 +1,6 @@
 # whatsmeow-rs 🦀💬
 
-Idiomatic Rust bindings for WhatsApp via [WhatsMeow](https://github.com/tulir/whatsmeow).
+Idiomatic, thread-safe Rust bindings for WhatsApp via [WhatsMeow](https://github.com/tulir/whatsmeow) Go bridge.
 
 ## Features
 
@@ -9,6 +9,7 @@ Idiomatic Rust bindings for WhatsApp via [WhatsMeow](https://github.com/tulir/wh
 - 🔒 **Thread-safe** - Share clients across tasks
 - 📊 **Tracing integration** - Structured logging
 - 🧠 **Multi-client support** - Manage multiple accounts
+- 🏗️ **Automated build** - One command `task build` for Go & Rust
 
 ## Quick Start
 
@@ -17,7 +18,8 @@ use whatsmeow::WhatsApp;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    WhatsApp::connect("whatsapp.dll", "session.db")
+    // simplified: DLL path is now handled automatically
+    WhatsApp::connect("session.db")
         .on_qr(|qr| {
             if let Some(code) = qr.code() {
                 println!("Scan QR: {}", code);
@@ -37,7 +39,7 @@ async fn main() -> anyhow::Result<()> {
 use futures::StreamExt;
 use whatsmeow::{Event, WhatsApp};
 
-let client = WhatsApp::connect("dll", "db").build().await?;
+let client = WhatsApp::connect("session.db").build().await?;
 
 let mut events = client.events();
 while let Some(event) = events.next().await {
@@ -49,26 +51,22 @@ while let Some(event) = events.next().await {
 }
 ```
 
+## Requirements
+
+- **Rust** 1.70+
+- **Go** 1.24+ (CGO required)
+- **Task** (go-task) for automation
+
 ## Building
 
-### Prerequisites
-
-- Rust 1.70+
-- Go 1.21+
-- CGO enabled (for building DLL)
-
-### Build Go DLL
+The project uses `task` for unified build management.
 
 ```powershell
-cd go/bridge
-$env:CGO_ENABLED="1"
-go build -buildmode=c-shared -o ../target/whatsmeow.dll .
-```
+# 1. Build everything (Go DLL + .lib + Rust)
+task build
 
-### Build Rust
-
-```bash
-cargo build --workspace
+# 2. Run the basic example
+task run
 ```
 
 ## Project Structure
@@ -76,10 +74,13 @@ cargo build --workspace
 ```
 whatsmeow-rs/
 ├── crates/
-│   ├── whatsmeow-sys/    # Raw FFI bindings
-│   └── whatsmeow/        # Safe Rust API
-├── go/bridge/            # Go WhatsMeow wrapper
-└── examples/             # Usage examples
+│   ├── whatsmeow-sys/ # Raw FFI bindings
+│   └── whatsmeow/     # Safe Rust API (Main Crate)
+├── go/
+│   ├── bridge/        # Go WhatsMeow wrapper
+│   └── scripts/       # MSVC build scripts
+├── examples/           # Multi and Stream examples
+└── Taskfile.yml        # Build automation
 ```
 
 ## License

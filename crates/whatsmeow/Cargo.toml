@@ -2,9 +2,14 @@
 name = "whatsmeow"
 version.workspace = true
 edition.workspace = true
-description = "Idiomatic Rust bindings for WhatsApp via WhatsMeow"
-keywords = ["whatsapp", "messaging", "ffi"]
-categories = ["api-bindings", "asynchronous"]
+authors = ["Your Name <email@example.com>"]
+description = "Idiomatic, thread-safe Rust bindings for WhatsApp via WhatsMeow Go bridge"
+keywords = ["whatsapp", "messaging", "ffi", "whatsmeow"]
+categories = ["api-bindings", "asynchronous", "multimedia"]
+homepage = "https://github.com/yourusername/whatsmeow-rs"
+repository = "https://github.com/yourusername/whatsmeow-rs"
+readme = "../../README.md"
+license.workspace = true
 
 [dependencies]
 whatsmeow-sys = { path = "../whatsmeow-sys" }

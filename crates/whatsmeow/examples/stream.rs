@@ -9,9 +9,7 @@ async fn main() -> anyhow::Result<()> {
 
     println!("📡 Starting WhatsApp client (stream mode)...");
 
-    let client = WhatsApp::connect("whatsapp.dll", "session.db")
-        .build()
-        .await?;
+    let client = WhatsApp::connect("session.db").build().await?;
 
     let mut events = client.events();
 
