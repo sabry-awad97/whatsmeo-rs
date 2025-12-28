@@ -1,8 +1,8 @@
 [package]
 name = "whatsmeow-sys"
 version = "0.1.2"
-edition = "2021"
-authors = ["Sabry Awad <sabry-awad97@hotmail.com>"]
+edition.workspace = true
+authors = ["Sabry Awad <dr.sabry1997@gmail.com>"]
 description = "Raw FFI bindings to the WhatsApp Go bridge DLL for whatsmeow"
 license = "MIT"
 repository = "https://github.com/sabry-awad97/whatsmeow-rs"

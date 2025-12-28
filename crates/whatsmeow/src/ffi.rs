@@ -15,13 +15,22 @@ pub(crate) struct FfiClient {
 
 impl FfiClient {
     pub fn new(db_path: impl AsRef<Path>) -> Result<Self> {
-        let path = db_path
-            .as_ref()
+        let path = db_path.as_ref();
+
+        // Create parent directory if it doesn't exist
+        if let Some(parent) = path.parent() {
+            if !parent.as_os_str().is_empty() && !parent.exists() {
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| Error::Init(format!("Failed to create directory: {}", e)))?;
+            }
+        }
+
+        let path_str = path
             .to_str()
             .ok_or_else(|| Error::Init("Invalid path encoding".into()))?;
 
         let c_path =
-            CString::new(path).map_err(|_| Error::Init("Path contains null byte".into()))?;
+            CString::new(path_str).map_err(|_| Error::Init("Path contains null byte".into()))?;
 
         let handle = unsafe { sys::wm_client_new(c_path.as_ptr()) };
 

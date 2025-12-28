@@ -1,8 +1,8 @@
 [package]
 name = "whatsmeow"
-version = "0.1.2"
-edition = "2021"
-authors = ["Sabry Awad <sabry-awad97@hotmail.com>"]
+version = "0.1.3"
+edition.workspace = true
+authors = ["Sabry Awad <dr.sabry1997@gmail.com>"]
 description = "Idiomatic, thread-safe Rust bindings for WhatsApp via WhatsMeow Go bridge"
 keywords = ["whatsapp", "messaging", "ffi", "whatsmeow"]
 categories = ["api-bindings", "asynchronous", "multimedia"]
@@ -27,6 +27,8 @@ futures.workspace = true
 
 [dev-dependencies]
 anyhow.workspace = true
+qrcode = "0.14.1"
+colored = "3.0.0"
 
 [[example]]
 name = "basic"
