@@ -8,9 +8,12 @@ async fn main() -> anyhow::Result<()> {
 
     println!("🚀 Starting WhatsApp client...");
 
-    WhatsApp::connect("whatsapp.dll", "session.db")
+    WhatsApp::connect("session.db")
         .on_qr(|qr| {
-            println!("\n📱 Scan this QR code:\n{}", qr.code);
+            println!("\n📱 Scan this QR code:");
+            if let Some(code) = qr.code() {
+                println!("{}", code);
+            }
         })
         .on_connected(|_| {
             println!("✅ Connected to WhatsApp!");

@@ -16,7 +16,7 @@ pub struct WhatsApp {
 
 impl WhatsApp {
     /// Start building a new WhatsApp client
-    pub fn connect(_dll_path: impl AsRef<Path>, db_path: impl AsRef<Path>) -> WhatsAppBuilder {
+    pub fn connect(db_path: impl AsRef<Path>) -> WhatsAppBuilder {
         WhatsAppBuilder::new(db_path)
     }
 

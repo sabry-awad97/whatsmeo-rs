@@ -19,3 +19,18 @@ tracing-subscriber.workspace = true
 dashmap.workspace = true
 parking_lot.workspace = true
 futures.workspace = true
+
+[dev-dependencies]
+anyhow.workspace = true
+
+[[example]]
+name = "basic"
+path = "examples/basic.rs"
+
+[[example]]
+name = "stream"
+path = "examples/stream.rs"
+
+[[example]]
+name = "multi"
+path = "examples/multi.rs"

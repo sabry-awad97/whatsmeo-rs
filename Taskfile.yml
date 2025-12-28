@@ -1,0 +1,110 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  GO_DIR: go
+  GO_BRIDGE_DIR: go/bridge
+  GO_TARGET_DIR: go/target
+  RUST_TARGET_DIR: target
+
+env:
+  CGO_ENABLED: "1"
+  WHATSMEOW_LIB_DIR: "{{.ROOT_DIR}}/{{.GO_TARGET_DIR}}"
+
+# Use powershell on windows
+shell: powershell
+
+tasks:
+  default:
+    desc: Build everything
+    cmds:
+      - task: build
+
+  build:
+    desc: Build Go DLL and Rust workspace
+    cmds:
+      - task: build:go
+      - task: build:rust
+
+  build:go:
+    desc: Build Go DLL
+    dir: "{{.GO_BRIDGE_DIR}}"
+    cmds:
+      - go build -buildmode=c-shared -o ../target/whatsmeow.dll .
+      - task: build:lib
+    sources:
+      - "{{.GO_BRIDGE_DIR}}/*.go"
+    generates:
+      - "{{.GO_TARGET_DIR}}/whatsmeow.dll"
+      - "{{.GO_TARGET_DIR}}/whatsmeow.h"
+
+  build:lib:
+    desc: Generate import library for MSVC
+    dir: "{{.GO_TARGET_DIR}}"
+    platforms: [windows]
+    cmds:
+      - powershell -ExecutionPolicy Bypass -File ../scripts/generate_lib.ps1 -TargetDir .
+    generates:
+      - "{{.GO_TARGET_DIR}}/whatsmeow.lib"
+
+  build:rust:
+    desc: Build Rust workspace
+    cmds:
+      - cargo build --workspace
+    sources:
+      - "crates/**/*.rs"
+      - "Cargo.toml"
+      - "crates/*/Cargo.toml"
+
+  run:
+    desc: Run basic example
+    deps: [build]
+    cmds:
+      - cargo run -p whatsmeow --example basic
+
+  run:stream:
+    desc: Run stream example
+    deps: [build]
+    cmds:
+      - cargo run -p whatsmeow --example stream
+
+  run:multi:
+    desc: Run multi-client example
+    deps: [build]
+    cmds:
+      - cargo run -p whatsmeow --example multi
+
+  test:
+    desc: Run tests
+    cmds:
+      - cargo test --workspace
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - cargo clean
+      - rm -rf {{.GO_TARGET_DIR}}/*
+
+  go:tidy:
+    desc: Tidy Go modules
+    dir: "{{.GO_DIR}}"
+    cmds:
+      - go mod tidy
+
+  check:
+    desc: Check workspace compiles
+    cmds:
+      - cargo check --workspace
+
+  fmt:
+    desc: Format code
+    cmds:
+      - cargo fmt --all
+      - cmd: gofmt -w {{.GO_BRIDGE_DIR}}
+        ignore_error: true
+
+  lint:
+    desc: Run linters
+    cmds:
+      - cargo clippy --workspace -- -D warnings
