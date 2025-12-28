@@ -11,7 +11,8 @@ async fn main() -> anyhow::Result<()> {
     let manager = WhatsAppManager::new();
 
     // Spawn first bot
-    let bot1 = manager.spawn("bot-1", "bot1.db")?
+    let bot1 = manager
+        .spawn("bot-1", "bot1.db")?
         .on_qr(|qr| {
             println!("[Bot1] 📱 QR: {:?}", qr.code());
         })
@@ -20,7 +21,8 @@ async fn main() -> anyhow::Result<()> {
         });
 
     // Spawn second bot
-    let bot2 = manager.spawn("bot-2", "bot2.db")?
+    let bot2 = manager
+        .spawn("bot-2", "bot2.db")?
         .on_qr(|qr| {
             println!("[Bot2] 📱 QR: {:?}", qr.code());
         })
@@ -29,10 +31,7 @@ async fn main() -> anyhow::Result<()> {
         });
 
     // Run both in parallel
-    let (r1, r2) = tokio::join!(
-        bot1.run(),
-        bot2.run()
-    );
+    let (r1, r2) = tokio::join!(bot1.run(), bot2.run());
 
     r1?;
     r2?;

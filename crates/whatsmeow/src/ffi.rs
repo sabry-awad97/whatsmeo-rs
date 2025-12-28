@@ -3,7 +3,7 @@
 use std::ffi::CString;
 use std::path::Path;
 
-use whatsmeow_sys::{self as sys, ClientHandle, error_codes::*};
+use whatsmeow_sys::{self as sys, error_codes::*, ClientHandle};
 
 use crate::error::{Error, Result};
 

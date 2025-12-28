@@ -6,7 +6,7 @@ members = ["crates/whatsmeow-sys", "crates/whatsmeow"]
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/yourusername/whatsmeow-rs"
+repository = "https://github.com/sabry-awad97/whatsmeow-rs"
 
 [workspace.dependencies]
 # Async runtime
