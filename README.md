@@ -8,24 +8,23 @@ Idiomatic, thread-safe Rust bindings for WhatsApp via [WhatsMeow](https://github
 
 ## Features
 
-- ✨ **Fluent builder API** - No `Arc`, no channels in user code
+- ✨ **Fluent builder API** with async callbacks
 - 📡 **Callback & Stream events** - Choose your style
+- 📸 **Media support** - Send images with auto MIME detection
 - 🔒 **Thread-safe** - Share clients across tasks
-- 📊 **Tracing integration** - Structured logging with FFI operation timing
-- 🧠 **Multi-client support** - Manage multiple accounts
+- 🏷️ **Custom device name** - Shows in WhatsApp's "Linked Devices"
+- 📊 **Tracing integration** - Structured logging with FFI timing
 - 📦 **Automated Go bridge** - Compiles automatically via `build.rs`
-- 🎯 **Memory tracking** - Built-in allocator for debugging FFI leaks
-- 🏷️ **Custom device name** - Shows your app name in WhatsApp's "Linked Devices"
 
 ## Installation
 
 ```toml
 [dependencies]
-whatsmeow = "0.1.3"
+whatsmeow = "0.1.4"
 tokio = { version = "1", features = ["full"] }
 ```
 
-> **Note**: Requires Go 1.21+ with CGO enabled for the Go bridge compilation.
+> **Note**: Requires Go 1.21+ with CGO enabled.
 
 ## Quick Start
 
@@ -36,104 +35,79 @@ use whatsmeow::{WhatsApp, init_tracing};
 async fn main() -> anyhow::Result<()> {
     init_tracing();
 
-    let client = WhatsApp::connect("storage/session.db")
-        .device_name("My Rust App")  // Custom name in WhatsApp
-        .on_qr(|qr| {
+    let client = WhatsApp::connect("session.db")
+        .device_name("My Rust App")
+        .on_qr(|qr| async move {
             if let Some(code) = qr.code() {
-                println!("📱 Scan QR: {}", code);
+                println!("📱 Scan: {}", code);
             }
         })
-        .on_connected(|_| println!("✅ Connected!"))
-        .on_message(|msg| {
-            let text = msg.text();
-            if !text.is_empty() {
-                println!("📩 {}: {}", msg.sender_name(), text);
-            }
+        .on_message(|msg| async move {
+            println!("📩 {}: {}", msg.sender_name(), msg.text());
         })
         .build()
         .await?;
 
-    // Graceful shutdown on Ctrl+C
     tokio::select! {
-        result = client.run() => result?,
-        _ = tokio::signal::ctrl_c() => {
-            println!("👋 Shutting down...");
-            client.disconnect();
-        }
+        r = client.run() => r?,
+        _ = tokio::signal::ctrl_c() => client.disconnect(),
     }
-
     Ok(())
 }
+```
+
+## Sending Images
+
+```rust
+use whatsmeow::{Jid, MediaSource, MessageType};
+
+// Auto-detect MIME type from file signature
+client.send(
+    Jid::user("1234567890"),
+    MessageType::image_auto(MediaSource::file("photo.jpg"))
+)?;
+
+// With caption
+client.send(
+    Jid::user("1234567890"),
+    MessageType::image_auto_with_caption(
+        MediaSource::file("photo.png"),
+        "Check this out!"
+    )
+)?;
 ```
 
 ## Stream-based Events
 
 ```rust
 use futures::StreamExt;
-use whatsmeow::{Event, WhatsApp};
-
-let client = WhatsApp::connect("session.db").build().await?;
+use whatsmeow::Event;
 
 let mut events = client.events();
 while let Some(event) = events.next().await {
     match event {
         Event::Message(msg) => println!("{}: {}", msg.sender_name(), msg.text()),
         Event::Connected => println!("Connected!"),
-        Event::Disconnected => break,
         _ => {}
     }
 }
 ```
-
-## Memory Tracking
-
-Track FFI memory operations to detect leaks:
-
-```rust
-use whatsmeow::TrackedAllocator;
-
-#[global_allocator]
-static ALLOCATOR: TrackedAllocator = TrackedAllocator::new();
-
-fn main() {
-    // ... your code ...
-
-    // Print stats on shutdown
-    ALLOCATOR.print_stats();
-}
-```
-
-## Building from Source
-
-```bash
-# Clone the repository
-git clone https://github.com/sabry-awad97/whatsmeow-rs
-cd whatsmeow-rs
-
-# Run the example
-cargo run --example basic
-```
-
-The Go bridge compiles automatically during `cargo build`. No manual steps needed!
 
 ## Project Structure
 
 ```
 whatsmeow-rs/
 ├── crates/
-│   ├── whatsmeow-sys/     # Raw FFI bindings + Go source
-│   │   ├── go/bridge/     # Go WhatsMeow wrapper
-│   │   └── src/           # Rust FFI declarations
-│   └── whatsmeow/         # Safe, idiomatic Rust API
-├── examples/              # Usage examples
-└── Cargo.toml             # Workspace root
+│   ├── whatsmeow-sys/     # Raw FFI + Go source
+│   └── whatsmeow/         # Safe Rust API
+└── Cargo.toml
 ```
 
 ## Requirements
 
 - **Rust** 2024 edition (1.85+)
 - **Go** 1.21+ with CGO enabled
-- **Windows**: MSVC toolchain (for `.lib` generation)
+- **Windows**: MSVC toolchain
 - **Linux/macOS**: GCC or Clang
 
 ## License

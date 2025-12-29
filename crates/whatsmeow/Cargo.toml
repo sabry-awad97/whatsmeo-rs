@@ -1,6 +1,6 @@
 [package]
 name = "whatsmeow"
-version = "0.1.3"
+version = "0.1.4"
 edition.workspace = true
 authors = ["Sabry Awad <dr.sabry1997@gmail.com>"]
 description = "Idiomatic, thread-safe Rust bindings for WhatsApp via WhatsMeow Go bridge"
@@ -16,7 +16,7 @@ default = []
 embed-dll = [] # Embed the Go DLL in the binary for portable executables
 
 [dependencies]
-whatsmeow-sys = { path = "../whatsmeow-sys", version = "0.1.3" }
+whatsmeow-sys = { path = "../whatsmeow-sys", version = "0.1.4" }
 
 tokio.workspace = true
 thiserror.workspace = true

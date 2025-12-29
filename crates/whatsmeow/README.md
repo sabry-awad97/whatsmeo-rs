@@ -7,8 +7,9 @@ Idiomatic, thread-safe Rust bindings for WhatsApp via [WhatsMeow](https://github
 
 ## Features
 
-- ✨ **Fluent builder API** with chainable methods
+- ✨ **Fluent builder API** with async callbacks
 - 📡 **Dual event model**: Callbacks or async streams
+- 📸 **Media support**: Send images with auto MIME detection
 - 🏷️ **Custom device name** in WhatsApp's "Linked Devices"
 - 📊 **Memory tracking** for FFI debugging
 - 🔒 **Thread-safe** client sharing
@@ -24,19 +25,18 @@ async fn main() -> anyhow::Result<()> {
     init_tracing();
 
     let client = WhatsApp::connect("data/session.db")
-        .device_name("My App")  // Shows in WhatsApp
-        .on_qr(|qr| {
+        .device_name("My App")
+        .on_qr(|qr| async move {
             if let Some(code) = qr.code() {
                 println!("Scan: {}", code);
             }
         })
-        .on_message(|msg| {
+        .on_message(|msg| async move {
             println!("{}: {}", msg.sender_name(), msg.text());
         })
         .build()
         .await?;
 
-    // Graceful Ctrl+C handling
     tokio::select! {
         r = client.run() => r?,
         _ = tokio::signal::ctrl_c() => client.disconnect(),
@@ -45,17 +45,35 @@ async fn main() -> anyhow::Result<()> {
 }
 ```
 
-## Memory Tracking
+## Sending Images
 
 ```rust
-use whatsmeow::TrackedAllocator;
+use whatsmeow::{Jid, MediaSource, MessageType};
 
-#[global_allocator]
-static ALLOC: TrackedAllocator = TrackedAllocator::new();
+// Auto-detect MIME type from file signature
+client.send(
+    Jid::user("1234567890"),
+    MessageType::image_auto(MediaSource::file("photo.jpg"))
+)?;
 
-// On shutdown:
-ALLOC.print_stats();
+// With caption
+client.send(
+    Jid::user("1234567890"),
+    MessageType::image_auto_with_caption(
+        MediaSource::file("photo.png"),
+        "Check this out!"
+    )
+)?;
 ```
+
+## MediaSource Options
+
+| Source                            | Usage                |
+| --------------------------------- | -------------------- |
+| `MediaSource::file("path.jpg")`   | Load from local file |
+| `MediaSource::bytes(vec![...])`   | Raw bytes            |
+| `MediaSource::base64("...")`      | Base64 encoded       |
+| `MediaSource::url("https://...")` | Remote URL (future)  |
 
 ## Event Types
 
