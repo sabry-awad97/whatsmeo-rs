@@ -114,7 +114,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "tokio",
- "whatsmeow 0.1.2",
+ "whatsmeow 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -665,25 +665,6 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "whatsmeow"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3f6abf48eaa0ebd95ed823c2d4dc14ff00c2b5719c069454dc222b827fced24"
-dependencies = [
- "anyhow",
- "dashmap",
- "futures",
- "parking_lot",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "whatsmeow-sys 0.1.2",
-]
-
-[[package]]
-name = "whatsmeow"
 version = "0.1.4"
 dependencies = [
  "anyhow",
@@ -703,10 +684,28 @@ dependencies = [
 ]
 
 [[package]]
-name = "whatsmeow-sys"
-version = "0.1.2"
+name = "whatsmeow"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e991aea7998e75f0afb429643c7947af1de3a669255a18913a3cc2f98580bd52"
+checksum = "7f6a748af9914ac029d1ca05a353be58158e1d88a227bfc12ea58b63af50ad60"
+dependencies = [
+ "anyhow",
+ "base64",
+ "dashmap",
+ "futures",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "whatsmeow-sys 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "whatsmeow-sys"
+version = "0.1.4"
 dependencies = [
  "cc",
  "libc",
@@ -715,6 +714,8 @@ dependencies = [
 [[package]]
 name = "whatsmeow-sys"
 version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14b22e37a0c6712a665e75f159141f33581b61417afb8e0657f95c5a269aa086"
 dependencies = [
  "cc",
  "libc",

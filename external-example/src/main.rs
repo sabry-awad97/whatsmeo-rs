@@ -6,13 +6,13 @@ async fn main() -> anyhow::Result<()> {
 
     // Initialize the client
     let _client = WhatsApp::connect("external.db")
-        .on_qr(|qr| {
+        .on_qr(|qr| async move {
             if let Some(code) = qr.code() {
                 println!("🔗 New QR Code: {}", code);
             }
         })
-        .on_message(|msg| {
-            println!("📩 Message from {}: {}", msg.sender_name(), msg.text);
+        .on_message(|msg| async move {
+            println!("📩 Message from {}: {}", msg.sender_name(), msg.text());
         })
         .build()
         .await?;
