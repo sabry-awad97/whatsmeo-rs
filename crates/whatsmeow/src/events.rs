@@ -71,6 +71,139 @@ impl AsRef<str> for Jid {
     }
 }
 
+/// Source of media content
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum MediaSource {
+    /// Load from a local file path
+    LocalPath { path: std::path::PathBuf },
+    /// Download from a remote URL
+    RemoteUrl { url: String },
+    /// Base64 encoded data
+    Base64 { data: String },
+    /// Raw bytes (already loaded)
+    Bytes { data: Vec<u8> },
+}
+
+impl MediaSource {
+    /// Create from a local file path
+    pub fn file(path: impl Into<std::path::PathBuf>) -> Self {
+        MediaSource::LocalPath { path: path.into() }
+    }
+
+    /// Create from a URL
+    pub fn url(url: impl Into<String>) -> Self {
+        MediaSource::RemoteUrl { url: url.into() }
+    }
+
+    /// Create from base64 encoded string
+    pub fn base64(data: impl Into<String>) -> Self {
+        MediaSource::Base64 { data: data.into() }
+    }
+
+    /// Create from raw bytes
+    pub fn bytes(data: Vec<u8>) -> Self {
+        MediaSource::Bytes { data }
+    }
+}
+
+impl From<Vec<u8>> for MediaSource {
+    fn from(data: Vec<u8>) -> Self {
+        MediaSource::Bytes { data }
+    }
+}
+
+impl From<std::path::PathBuf> for MediaSource {
+    fn from(path: std::path::PathBuf) -> Self {
+        MediaSource::LocalPath { path }
+    }
+}
+
+/// Error type for MediaSource conversion
+#[derive(Debug, thiserror::Error)]
+pub enum MediaSourceError {
+    #[error("Failed to read file: {0}")]
+    IoError(#[from] std::io::Error),
+    #[error("Invalid base64: {0}")]
+    Base64Error(String),
+    #[error("Invalid URL: {0}")]
+    InvalidUrl(String),
+}
+
+impl MediaSource {
+    /// Load file contents (for LocalPath variant)
+    pub fn load(&self) -> Result<Vec<u8>, MediaSourceError> {
+        match self {
+            MediaSource::Bytes { data } => Ok(data.clone()),
+            MediaSource::LocalPath { path } => Ok(std::fs::read(path)?),
+            MediaSource::Base64 { data } => {
+                use base64::Engine;
+                base64::engine::general_purpose::STANDARD
+                    .decode(data)
+                    .map_err(|e| MediaSourceError::Base64Error(e.to_string()))
+            }
+            MediaSource::RemoteUrl { url } => Err(MediaSourceError::InvalidUrl(format!(
+                "Cannot load remote URL directly: {}",
+                url
+            ))),
+        }
+    }
+
+    /// Detect MIME type from file signature (magic bytes)
+    pub fn detect_mime_from_signature(data: &[u8]) -> String {
+        if data.len() >= 8 {
+            // PNG signature
+            if data.starts_with(&[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]) {
+                return "image/png".to_string();
+            }
+            // JPEG signature
+            if data.starts_with(&[0xFF, 0xD8, 0xFF]) {
+                return "image/jpeg".to_string();
+            }
+            // WebP signature
+            if data.len() >= 12
+                && data[0..4] == [0x52, 0x49, 0x46, 0x46]
+                && data[8..12] == [0x57, 0x45, 0x42, 0x50]
+            {
+                return "image/webp".to_string();
+            }
+            // GIF signature
+            if data.starts_with(b"GIF87a") || data.starts_with(b"GIF89a") {
+                return "image/gif".to_string();
+            }
+            // PDF signature
+            if data.starts_with(b"%PDF") {
+                return "application/pdf".to_string();
+            }
+            // ZIP signature (also used by DOCX, XLSX, etc.)
+            if data.starts_with(&[0x50, 0x4B, 0x03, 0x04])
+                || data.starts_with(&[0x50, 0x4B, 0x05, 0x06])
+            {
+                return "application/zip".to_string();
+            }
+            // MP4 signature
+            if data.len() >= 12 && data[4..8] == [0x66, 0x74, 0x79, 0x70] {
+                return "video/mp4".to_string();
+            }
+            // OGG signature (used for audio/video)
+            if data.starts_with(b"OggS") {
+                return "audio/ogg".to_string();
+            }
+            // MP3 signature
+            if data.starts_with(&[0xFF, 0xFB])
+                || data.starts_with(&[0xFF, 0xF3])
+                || data.starts_with(&[0xFF, 0xF2])
+            {
+                return "audio/mpeg".to_string();
+            }
+            // WAV signature
+            if data.starts_with(b"RIFF") && data.len() >= 12 && data[8..12] == *b"WAVE" {
+                return "audio/wav".to_string();
+            }
+        }
+        "application/octet-stream".to_string() // Default fallback
+    }
+}
+
 /// Represents different types of outgoing WhatsApp messages
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MessageType {
@@ -78,10 +211,10 @@ pub enum MessageType {
     Text(String),
     /// Image message
     Image {
-        /// Raw image data (JPEG, PNG, etc.)
-        data: Vec<u8>,
-        /// MIME type (e.g., "image/jpeg", "image/png")
-        mime_type: String,
+        /// Image source (file, URL, base64, or raw bytes)
+        source: MediaSource,
+        /// MIME type (auto-detected if None)
+        mime_type: Option<String>,
         /// Optional caption
         caption: Option<String>,
     },
@@ -94,24 +227,45 @@ impl MessageType {
         MessageType::Text(s.into())
     }
 
-    /// Create an image message from raw bytes
-    pub fn image(data: Vec<u8>, mime_type: impl Into<String>) -> Self {
+    /// Create an image message with explicit MIME type
+    pub fn image(source: impl Into<MediaSource>, mime_type: impl Into<String>) -> Self {
         MessageType::Image {
-            data,
-            mime_type: mime_type.into(),
+            source: source.into(),
+            mime_type: Some(mime_type.into()),
             caption: None,
         }
     }
 
-    /// Create an image message with a caption
+    /// Create an image message with auto-detected MIME type
+    pub fn image_auto(source: impl Into<MediaSource>) -> Self {
+        MessageType::Image {
+            source: source.into(),
+            mime_type: None,
+            caption: None,
+        }
+    }
+
+    /// Create an image message with a caption and explicit MIME type
     pub fn image_with_caption(
-        data: Vec<u8>,
+        source: impl Into<MediaSource>,
         mime_type: impl Into<String>,
         caption: impl Into<String>,
     ) -> Self {
         MessageType::Image {
-            data,
-            mime_type: mime_type.into(),
+            source: source.into(),
+            mime_type: Some(mime_type.into()),
+            caption: Some(caption.into()),
+        }
+    }
+
+    /// Create an image message with a caption and auto-detected MIME type
+    pub fn image_auto_with_caption(
+        source: impl Into<MediaSource>,
+        caption: impl Into<String>,
+    ) -> Self {
+        MessageType::Image {
+            source: source.into(),
+            mime_type: None,
             caption: Some(caption.into()),
         }
     }

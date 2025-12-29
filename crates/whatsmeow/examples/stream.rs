@@ -55,6 +55,32 @@ async fn main() -> anyhow::Result<()> {
                                     eprintln!("Failed to send reply: {}", e);
                                 }
                             }
+
+                            // Send image: "!image path/to/file.jpg [caption]"
+                            // MIME type is auto-detected from file signature
+                            if msg.info.is_from_me && text.starts_with("!image ") {
+                                let args = text.strip_prefix("!image ").unwrap();
+                                let parts: Vec<&str> = args.splitn(2, ' ').collect();
+                                let path = parts[0];
+                                let caption = parts.get(1).map(|s| s.to_string());
+
+                                let msg_type = if let Some(cap) = caption {
+                                    whatsmeow::MessageType::image_auto_with_caption(
+                                        whatsmeow::MediaSource::file(path),
+                                        cap,
+                                    )
+                                } else {
+                                    whatsmeow::MessageType::image_auto(
+                                        whatsmeow::MediaSource::file(path),
+                                    )
+                                };
+
+                                if let Err(e) = client.send(&msg.info.chat, msg_type) {
+                                    eprintln!("Failed to send image: {}", e);
+                                } else {
+                                    println!("📸 Sent image: {}", path);
+                                }
+                            }
                         }
                     }
                     Event::Receipt(receipt) => {
